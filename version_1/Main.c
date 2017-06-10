@@ -1,3 +1,4 @@
+// going to add support for half precesion float
 #include <stdio.h>
 #include "math.h"
 #include <time.h>
