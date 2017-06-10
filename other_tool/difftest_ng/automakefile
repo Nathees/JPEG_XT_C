@@ -1,0 +1,41 @@
+##
+## $Id: automakefile.in,v 1.11 2014/11/20 12:20:02 thor Exp $
+##
+#######################################################################
+## Makefile for the j2k transcoder project,
+## THOR Software, 2. Jul. 2003, Thomas Richter for
+## Accusoft
+#######################################################################
+##
+##
+## The following variable defines the compiler we use
+## for running the code.
+##
+COMPILER_CMD	=	g++-4.9
+CC_ONLY         =       gcc
+SETTINGS	=	gcc
+PREFIX		=	/home/thor/bin/wavelet
+PTHREADCFLAGS	=	
+PTHREADLDFLAGS	=	
+PTHREADLIBS	=	
+HWTYPE		=	
+HAVE_ADDONS	=	
+##
+## Additional options
+ADDOPTS		=	-DUSE_AUTOCONF -mfpmath=387   -I/usr/include/libpng12 -I/usr/include
+LIB_OPTS	=	-fvisibility=internal -fPIC -DBUILD_LIB
+EXTRA_LIBS	=	
+##
+## Options for GSL
+GSL_LDFLAGS	=	-L/usr/lib -lgsl -lgslcblas -lm
+GSL_CFLAGS	=	-I/usr/include
+##
+## Options for PNG
+PNG_LDFLAGS	=	-lpng12 -lz
+PNG_CFLAGS	=	-I/usr/include/libpng12
+##
+## Options for EXR
+EXR_LDFLAGS	=	
+EXR_CFLAGS	=	
+
+
