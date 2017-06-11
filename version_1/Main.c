@@ -1,4 +1,3 @@
-// going to add support for half precesion float
 #include <stdio.h>
 #include "math.h"
 #include <time.h>
@@ -39,20 +38,13 @@ float block_temp[8][8];
 
 FILE *tone_map;
 
-//int **RGB_R;
-//int **RGB_G;
-//int **RGB_B;
-/*int RGB_R[8000][8000];
-int RGB_G[8000][8000];
-int RGB_B[8000][8000];*/
-
 int resi_y[8000][8000];
 int resi_cb[8000][8000];
 int resi_cr[8000][8000];
 
-int integer_R[8000][8000];
-int integer_G[8000][8000];
-int integer_B[8000][8000];
+int integer_R[5000][8000];
+int integer_G[5000][8000];
+int integer_B[5000][8000];
 
 int integer_block_upsampling_cb_1[16][8];
 int integer_block_upsampling_cb_2[16][8];
@@ -96,9 +88,9 @@ void generate_PFM_File(char *name);
 void calculate_psnr();
 
 
-int main(){
+int main(int argc, char* argv[]){
 	count = 0;
-	open_file("LG0004_c.jpg"); // LG0056_c
+	open_file(argv[1]); // LG0056_c
 	copy_file_to_memory(); 
 	check_SOI_marker();
 	
@@ -111,7 +103,7 @@ int main(){
 	while (buffer[count] != 0xDA){
 		
 		if (resi_tbox_flag && buffer[count] != 0xEB){
-			//residual_decode_process();
+			residual_decode_process();
 			resi_tbox_flag = 0;
 			printf("residual layer decoding Finished\n");
 		}
@@ -205,7 +197,7 @@ int main(){
 	//generate_PPM_File("output_float.ppm",1); // Float operation output Image
 	//generate_PPM_File("hdr.ppm",2); // Integer operation output Image
 
-	generate_PFM_File("hdr_output.pfm");
+	generate_PFM_File(argv[2]);
 
 	//calculate_psnr();
 	return 0;
@@ -437,8 +429,10 @@ void generate_PFM_File(char *name){
 	FILE * pfm;
 	char byte20[20];
 	unsigned int i, j, k, l, count;
+	char msb,lsb;
 
 	float hdr_r, hdr_g, hdr_b;
+	int int_r, int_g, int_b;
 	//unsigned char R, G, B;
 	//int intR,intG, intB;
 
@@ -447,13 +441,17 @@ void generate_PFM_File(char *name){
 	l = 2;
 
 	fwrite("PF\n", 3, 1, pfm);
+	//fwrite("P6\n", 3, 1, pfm);
+
 	count = sprintf(byte20, "%d", X);
 	fwrite(byte20, 1, count, pfm);
 	fwrite(" ", 1, 1, pfm);
 	count = sprintf(byte20, "%d", Y);
 	fwrite(byte20, 1, count, pfm);
 
+	//fwrite("\n-1.0\n", 6, 1, pfm);
 	fwrite("\n-1.000000\n", 11, 1, pfm);
+	//fwrite("\n65535\n", 7, 1, pfm);
 
 	for (i = 0; i < Y; i++)
 		for (j = 0; j < X; j++)
@@ -463,9 +461,43 @@ void generate_PFM_File(char *name){
 				hdr_g = sixteento32float(integer_G[i][j]);
 				hdr_b = sixteento32float(integer_B[i][j]);
 
+				/*int_r = (int) hdr_r;
+				int_g = (int) hdr_g;
+				int_b = (int) hdr_b;
+
+				lsb = int_r;
+				msb = int_r >> 8;
+				fwrite(&msb, 1, 1, pfm);				
+				fwrite(&lsb, 1, 1, pfm);
+
+				lsb = int_g;
+				msb = int_g >> 8;
+				fwrite(&msb, 1, 1, pfm);				
+				fwrite(&lsb, 1, 1, pfm);
+
+				lsb = int_b;
+				msb = int_b >> 8;
+				fwrite(&msb, 1, 1, pfm);				
+				fwrite(&lsb, 1, 1, pfm);*/
+
 				fwrite(&hdr_r, 4, 1, pfm);
 				fwrite(&hdr_g, 4, 1, pfm);
 				fwrite(&hdr_b, 4, 1, pfm);
+
+				/*lsb = integer_R[i][j];
+				msb = integer_R[i][j] >> 8;
+				fwrite(&msb, 1, 1, pfm);				
+				fwrite(&lsb, 1, 1, pfm);
+
+				lsb = integer_G[i][j];
+				msb = integer_G[i][j] >> 8;
+				fwrite(&msb, 1, 1, pfm);				
+				fwrite(&lsb, 1, 1, pfm);
+
+				lsb = integer_B[i][j];
+				msb = integer_B[i][j] >> 8;
+				fwrite(&msb, 1, 1, pfm);				
+				fwrite(&lsb, 1, 1, pfm);*/
 			}
 
 		}

@@ -326,9 +326,9 @@ void color_transform_integer(int x, int y){
 void tone_mapping(int x, int y){
 	for (row = 0; row < 8; row++){
 		for (col = 0; col < 8; col++){
-			integer_R[row + x * 8][col + y * 8] = tone_table[integer_block_r[row][col]] + resi_y[row + x * 8][col + y * 8];   //  tone_table[
-			integer_G[row + x * 8][col + y * 8] = tone_table[integer_block_g[row][col]] + resi_cb[row + x * 8][col + y * 8];   //  tone_table[
-			integer_B[row + x * 8][col + y * 8] = tone_table[integer_block_b[row][col]] + resi_cr[row + x * 8][col + y * 8];   //  tone_table[
+				integer_R[row + x * 8][col + y * 8] = tone_table[integer_block_r[row][col]] + resi_y[row + x * 8][col + y * 8];   //  tone_table[
+				integer_G[row + x * 8][col + y * 8] = tone_table[integer_block_g[row][col]] + resi_cb[row + x * 8][col + y * 8];   //  tone_table[
+				integer_B[row + x * 8][col + y * 8] = tone_table[integer_block_b[row][col]] + resi_cr[row + x * 8][col + y * 8];   //  tone_table[
 
 			//fwrite(&integer_block_r[row][col], 1, 1, tone_map);
 			//fwrite(&integer_block_g[row][col], 1, 1, tone_map);
