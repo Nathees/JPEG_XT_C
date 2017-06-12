@@ -4,11 +4,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "define.h"
 #include "Bitstream.h"
 #include "Main.h"
 #include "Huffman.h"
 #include "IDCT.h"
 #include "Upsampling.h"
+
 
 FILE *file_jpeg;
 //FILE *fp1;		// For Feig_IDCT
@@ -42,9 +44,9 @@ int resi_y[8000][8000];
 int resi_cb[8000][8000];
 int resi_cr[8000][8000];
 
-int integer_R[5000][8000];
-int integer_G[5000][8000];
-int integer_B[5000][8000];
+int integer_R[8000][8000];
+int integer_G[8000][8000];
+int integer_B[8000][8000];
 
 int integer_block_upsampling_cb_1[16][8];
 int integer_block_upsampling_cb_2[16][8];
@@ -89,6 +91,40 @@ void calculate_psnr();
 
 
 int main(int argc, char* argv[]){
+
+#if (XX && YY)
+	printf("X\n");
+
+#elif YY
+	printf("Y\n");
+#else
+	printf("Z\n");
+#endif
+
+	// Identifying Input Argument
+	char argument[20];
+
+	if(argc <= 2){ 				// Checking the sufficient Arguments
+		printf("Not Sufficient Arguments Entered\n");
+		exit(0);
+	}
+	else if(argc == 3){ 		// Checking the correctness of passed arguments (input & output files)
+		strcpy(argument, argv[1]);
+		if(argument[0] == '-'){
+			printf("Entered Argument is wrong\n");
+			exit(0);
+		}
+		strcpy(argument, argv[2]);
+		if(argument[0] == '-'){
+			printf("Entered Argument is wrong\n");
+			exit(0);
+		}
+		else{
+
+		}
+	}
+
+
 	count = 0;
 	open_file(argv[1]); // LG0056_c
 	copy_file_to_memory(); 
