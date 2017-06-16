@@ -1,0 +1,4 @@
+#ifndef SCAN_FRAME_DECODER_H_
+#define SCAN_FRAME_DECODER_H_
+
+#endif /* SCAN_FRAME_DECODER_H_ */
