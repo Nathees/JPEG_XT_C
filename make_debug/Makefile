@@ -10,7 +10,7 @@ all: 				system
 
 system:				main.o
 					(cd sources; make all)
-					g++ main.o -o main
+					g++ main.o sources/argument.o -o main
 
 main.o: 			main.c
 					g++ -c main.c
