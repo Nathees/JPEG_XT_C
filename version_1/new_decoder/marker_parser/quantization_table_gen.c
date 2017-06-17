@@ -1,12 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-#include "define.h"
-#include "Main.h"
+#include "../define.h"
+#include "../jpeg_xt_decoder.h"
+
 #include "marker_parser.h"
-#include "quatization_table_gen.h"
+#include "quantization_table_gen.h"
 
 int quanti_tab_len; 			// Quantization Marker Syntax Length
-int processed_bytes; 			// Number of Processed Bytes
+int dht_proc_bytes; 			// Number of Processed Bytes
 unsigned char Pq,Tq;			// Pq - element precision  Tq - table identifier
 char no_dqt_tables; 			// Number of DQT Tables
 
@@ -26,24 +28,26 @@ void quantization_table_gen(void){
 	#endif
 	
 	//************************************* calculate quantization table defination length (16 bit)**************************************
-	quanti_tab_len = buffer[index++]; app11_processed_bytes++;
+	quanti_tab_len = buffer[buff_index++]; app11_processed_bytes++;
 	quanti_tab_len = quanti_tab_len << 8;
-	quanti_tab_len = quanti_tab_len + buffer[index++] - 2;	app11_processed_bytes++;	// subtract 2 for remove the quantization table defination length (16 bit)
+	quanti_tab_len = quanti_tab_len + buffer[buff_index++] - 2;	app11_processed_bytes++;	// subtract 2 for remove the quantization table defination length (16 bit)
 	
 	//*********************** identify Pq and Tq and finally add one to no_table due to Pq and Tq each 4 bits*****************************
-	processed_bytes = 0;
+	dht_proc_bytes = 0;
 	no_dqt_tables = 0;
-	while (processed_bytes < quanti_tab_len){
+	while (dht_proc_bytes < quanti_tab_len){
 		no_dqt_tables = no_dqt_tables + 1;  
-		Pq = buffer[index++]; 
+		Pq = buffer[buff_index++]; 
 		Pq = Pq >> 4;
 		Tq = byte_file;
 		Tq = Tq & 0xF;
 		app11_processed_bytes++;
-		processed_bytes = processed_bytes + 1;
+		dht_proc_bytes = dht_proc_bytes + 1;
 
-		if (byte_file == 0xFF)
-			remove_00_byte("Error in DQT marker segment");
+		if (byte_file == 0xFF){
+			buff_index++;	 
+			app11_processed_bytes++;
+		}
 
 		//********************************************Generating Quantization Table *************************************** 
 		for (char i = 0; i < 8; i++){
@@ -53,19 +57,19 @@ void quantization_table_gen(void){
 
 				if(residual_layer_flag == 0){
 					#if INTEGER_OPERATION
-						base_int_quantization_table[i * 8 + j][Tq] = (((buffer[index++] * cos_val[col]) >> 4) + 1) >> 1; 
+						base_int_quantization_table[i * 8 + j][Tq] = (((buffer[buff_index++] * cos_val[col]) >> 4) + 1) >> 1; 
 					#elif (IDCT_OPERATION == 1)
 						if (col == 0)
-							base_float_quantization_table[i * 8 + j][Tq] = (float)buffer[index++] / 4.0 * sqrt(2.0);
+							base_float_quantization_table[i * 8 + j][Tq] = (float)buffer[buff_index++] / 4.0 * sqrt(2.0);
 						else
-							base_float_quantization_table[i * 8 + j][Tq] = ((float)buffer[index++] / 2.0)  * cos((float)pi * col / 16.0);
+							base_float_quantization_table[i * 8 + j][Tq] = ((float)buffer[buff_index++] / 2.0)  * cos((float)pi * col / 16.0);
 					#else
 						if (row == 0 && col == 0)
-							base_float_quantization_table[0][Tq] = (float)buffer[index++] / 8;
+							base_float_quantization_table[0][Tq] = (float)buffer[buff_index++] / 8;
 						else if (row == 0 || col == 0)
-							base_float_quantization_table[i * 8 + j][Tq] = (float)buffer[index++] / 4.0 / sqrt(2.0);
+							base_float_quantization_table[i * 8 + j][Tq] = (float)buffer[buff_index++] / 4.0 / sqrt(2.0);
 						else
-							base_float_quantization_table[i * 8 + j][Tq] = (float)buffer[index++] / 4.0;
+							base_float_quantization_table[i * 8 + j][Tq] = (float)buffer[buff_index++] / 4.0;
 	
 						if (~(row == 0 && col == 0))
 							base_float_quantization_table[i * 8 + j][Tq] = base_float_quantization_table[i * 8 + j][Tq] 
@@ -74,19 +78,19 @@ void quantization_table_gen(void){
 				}
 				else{
 					#if INTEGER_OPERATION
-						resi_int_quantization_table[i * 8 + j][Tq] = (((buffer[index++] * cos_val[col]) >> 4) + 1) >> 1; 
+						resi_int_quantization_table[i * 8 + j][Tq] = (((buffer[buff_index++] * cos_val[col]) >> 4) + 1) >> 1; 
 					#elif (IDCT_OPERATION == 1)
 						if (col == 0)
-							resi_float_quantization_table[i * 8 + j][Tq] = (float)buffer[index++] / 4.0 * sqrt(2.0);
+							resi_float_quantization_table[i * 8 + j][Tq] = (float)buffer[buff_index++] / 4.0 * sqrt(2.0);
 						else
-							resi_float_quantization_table[i * 8 + j][Tq] = ((float)buffer[index++] / 2.0)  * cos((float)pi * col / 16.0);
+							resi_float_quantization_table[i * 8 + j][Tq] = ((float)buffer[buff_index++] / 2.0)  * cos((float)pi * col / 16.0);
 					#else
 						if (row == 0 && col == 0)
-							resi_float_quantization_table[0][Tq] = (float)buffer[index++] / 8;
+							resi_float_quantization_table[0][Tq] = (float)buffer[buff_index++] / 8;
 						else if (row == 0 || col == 0)
-							resi_float_quantization_table[i * 8 + j][Tq] = (float)buffer[index++] / 4.0 / sqrt(2.0);
+							resi_float_quantization_table[i * 8 + j][Tq] = (float)buffer[buff_index++] / 4.0 / sqrt(2.0);
 						else
-							resi_float_quantization_table[i * 8 + j][Tq] = (float)buffer[index++] / 4.0;
+							resi_float_quantization_table[i * 8 + j][Tq] = (float)buffer[buff_index++] / 4.0;
 	
 						if (~(row == 0 && col == 0))
 							resi_float_quantization_table[i * 8 + j][Tq] = resi_float_quantization_table[i * 8 + j][Tq] 
@@ -96,7 +100,7 @@ void quantization_table_gen(void){
 			}
 		}
 		app11_processed_bytes = app11_processed_bytes + 64;
-		processed_bytes = processed_bytes + 64;
+		dht_proc_bytes = dht_proc_bytes + 64;
 	}
 
 	// Tracking Operation

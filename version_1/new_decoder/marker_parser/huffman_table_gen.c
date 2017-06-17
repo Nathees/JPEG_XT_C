@@ -1,12 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-#include "define.h"
-#include "Main.h"
+#include "../define.h"
+#include "../jpeg_xt_decoder.h"
+
 #include "marker_parser.h"
 #include "huffman_table_gen.h"
 
 int huff_tab_len; 				// Huffman Marker Syntax Length
-int processed_bytes; 			// Number of Processed Bytes
+int dqt_proc_bytes; 			// Number of Processed Bytes
 unsigned char Tc_Th;			// Tc - Table class (1 - AC, 0 - DC)  Th - table identifier
 char no_dht_tables; 			// Number of DHT Tables
 
@@ -41,25 +43,25 @@ void huffman_table_gen(void){
 	#endif
 
 	//*************************************Calculate huffman table defination length (16 bit)*******************************************
-	huff_tab_len = buffer[index++];  app11_processed_bytes++;
+	huff_tab_len = buffer[buff_index++];  app11_processed_bytes++;
 	huff_tab_len = huff_tab_len << 8;
-	huff_tab_len = huff_tab_len + buffer[index++] - 2;	 app11_processed_bytes++;	// subtract 2 for remove the quantization table defination length (16 bit)
+	huff_tab_len = huff_tab_len + buffer[buff_index++] - 2;	 app11_processed_bytes++;	// subtract 2 for remove the quantization table defination length (16 bit)
 
 	//*********************** identify Tc and Th and finally add one to no_table due to Tc and Th each 4 bits**************************
-	processed_bytes = 0;
+	dqt_proc_bytes = 0;
 	no_dht_tables = 0;
-	while (processed_bytes < huff_tab_len){
+	while (dqt_proc_bytes < huff_tab_len){
 		no_dht_tables = no_dht_tables + 1;
-		Tc_Th = buffer[index++]; 
+		Tc_Th = buffer[buff_index++]; 
 		app11_processed_bytes++;
-		processed_bytes = processed_bytes + 1;
+		dqt_proc_bytes = dqt_proc_bytes + 1;
 
 		//*****************************Identify Li and store the HUFFSIZE to huffman_table[K][1]**************************************
 		J = 0;
 		Li = 0;
 		K = 0;
 		for (J = 1; J < 17; J++){
-			byte_file = buffer[index++]; 
+			byte_file = buffer[buff_index++]; 
 			Li = Li + byte_file;
 			//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 			while (byte_file){
@@ -69,8 +71,8 @@ void huffman_table_gen(void){
 			}
 		}
 		app11_processed_bytes = app11_processed_bytes + 16;
-		processed_bytes = processed_bytes + 16;				// add 16 for Li values each have 8 bits
-		processed_bytes = processed_bytes + Li;
+		dqt_proc_bytes = dqt_proc_bytes + 16;				// add 16 for Li values each have 8 bits
+		dqt_proc_bytes = dqt_proc_bytes + Li;
 		generate_huffcode();				//generate huff code for each Vi,j value and store it to Huffman table
 	}
 
@@ -106,7 +108,7 @@ void generate_huffcode(void){
 
 void State1(void){
 	// choose the Huffman table array based on Tc and Th
-	byte_file = buffer[index++]; app11_processed_bytes++;
+	byte_file = buffer[buff_index++]; app11_processed_bytes++;
 	state1_location = CODE;
 	state1_location = state1_location << (16 - huff_size[K]);
 

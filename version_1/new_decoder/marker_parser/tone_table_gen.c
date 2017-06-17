@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-#include "define.h"
-#include "Main.h"
+#include "../define.h"
+#include "../jpeg_xt_decoder.h"
+
 #include "marker_parser.h"
 #include "tone_table_gen.h"
 
@@ -15,10 +17,10 @@ void tone_table_gen(void){
 		printf("APP11 - TONE Table Gen Process\n");
 	#endif
 
-	index++;
+	buff_index++;
 	for (int x = 0; x < 256; x++){
-		msb = buffer[index++];
-		lsb = buffer[index++];
+		msb = buffer[buff_index++];
+		lsb = buffer[buff_index++];
 		tone_data = (msb << 8) + lsb;
 		tone_table[x] = tone_data;
 	}
