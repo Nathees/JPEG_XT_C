@@ -57,6 +57,12 @@ extern int img_width;
 // ************** Zig-Zag Control Variable ********************
 extern const unsigned char Zig_Zag[64];
 
+// **************  8 x 8 Block Decleraion    ******************
+extern int base_int_block[8][8];
+extern float base_float_block[8][8];
+extern int resi_int_block[8][8];
+extern float resi_float_block[8][8];
+
 // ************** Common Control Variables ********************
 extern unsigned char row, col;
 

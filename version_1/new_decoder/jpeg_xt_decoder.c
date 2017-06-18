@@ -7,6 +7,8 @@
 
 // Sub Header Files
 #include "marker_parser/marker_parser.h"
+#include "io_file/io_file.h"
+#include "huffman_decoder/huffman_decoder.h"
 
 
 //  ******************************** Extern Variables Decleration ********************************
@@ -74,8 +76,14 @@ const unsigned char Zig_Zag[64] = { 0x00, 0x10, 0x01, 0x02, 0x11, 0x20, 0x30, 0x
 									0x27, 0x37, 0x46, 0x55, 0x64, 0x73, 0x74, 0x65,	  //6
 									0x56, 0x47, 0x57, 0x66, 0x75, 0x76, 0x67, 0x77 }; //7
 
+// ********************************  8 x 8 Block Decleraion    ********************************
+int base_int_block[8][8];
+float base_float_block[8][8];
+int resi_int_block[8][8];
+float resi_float_block[8][8];
 
- // ******************************** Local Variables Decleration ********************************
+
+// ******************************** Local Variables Decleration ********************************
 char argument[20]; // Identifying Input Argument
 
 
@@ -102,6 +110,7 @@ int main(int argc, char* argv[]){
 		}
 	}
 
+	read_jpeg(argv[1]);
 	marker_parser();
 	return 0;
 }
