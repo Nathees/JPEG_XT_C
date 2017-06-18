@@ -63,6 +63,9 @@ extern float base_float_block[8][8];
 extern int resi_int_block[8][8];
 extern float resi_float_block[8][8];
 
+// **************  Identifying the current decoding layer  ******************
+extern unsigned char base_resi_layer; //( 0 - Base layer & 1 - Residual Layer)
+
 // ************** Common Control Variables ********************
 extern unsigned char row, col;
 

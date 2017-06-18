@@ -6,7 +6,6 @@
 #include "huffman_decoder.h"
 
 unsigned char compenent = 0, huff_dc_table_id = 0, huff_ac_table_id = 0, quant_table_id = 0;
-unsigned char base_resi_layer = 0;  //( 0 - Base layer & 1 - Residual Layer)
 
 
 // Variables Used for huffman decoder
@@ -64,13 +63,12 @@ void initial_load_bitstream(void){
 	huff_chk_bitstream = bitstream >> 16;
 }
 
-void huffman_decoder(unsigned char comp, unsigned char dht_dc_id, unsigned char dht_ac_id, unsigned char dqt_id, unsigned char layer){
+void huffman_decoder(unsigned char comp, unsigned char dht_dc_id, unsigned char dht_ac_id, unsigned char dqt_id){
 
 	compenent = comp;
 	huff_dc_table_id = dht_dc_id;
 	huff_ac_table_id = dht_ac_id;
 	quant_table_id = dqt_id;
-	base_resi_layer = layer;
 
 	reset_block();
 

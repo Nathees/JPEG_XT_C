@@ -4,7 +4,7 @@
 // Huffman Decoder Control Functions
 // Gloabal Gunctions
 void initial_load_bitstream(void);
-void huffman_decoder(unsigned char comp, unsigned char dht_dc_id, unsigned char dht_ac_id, unsigned char dqt_id, unsigned char layer);
+void huffman_decoder(unsigned char comp, unsigned char dht_dc_id, unsigned char dht_ac_id, unsigned char dqt_id);
 // Local Functions
 void reset_block(void);
 void dc_huffman_decode(void);

@@ -82,6 +82,9 @@ float base_float_block[8][8];
 int resi_int_block[8][8];
 float resi_float_block[8][8];
 
+// **************  Identifying the current decoding layer  ******************
+unsigned char base_resi_layer; //( 0 - Base layer & 1 - Residual Layer)
+
 
 // ******************************** Local Variables Decleration ********************************
 char argument[20]; // Identifying Input Argument
