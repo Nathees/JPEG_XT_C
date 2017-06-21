@@ -9,17 +9,20 @@
 #include "marker_parser/marker_parser.h"
 #include "io_file/io_file.h"
 #include "huffman_decoder/huffman_decoder.h"
+#include "idct/idct.h"
+#include "upsample/upsample.h";
 
 
 //  ******************************** Extern Variables Decleration ********************************
 
 // **************** Table Memory Decleration ****************
-// Base Quantization Table
-float base_float_quantization_table[64][2];
-int base_int_quantization_table[64][2];
-// Residual Quantization Table
-float resi_float_quantization_table[64][2];
-int resi_int_quantization_table[64][2];
+#if INTEGER_OPERATION
+	int 	base_int_quantization_table[64][2];
+	int 	resi_int_quantization_table[64][2];
+#else
+	float base_float_quantization_table[64][2];
+	float resi_float_quantization_table[64][2];
+#endif
 
 // Base Huffman Table
 unsigned char base_huffman_table_DC_1[65536][2] = { { 0 } }; //column 0 - HUFF_SIZE, 1 - HUFF_VALUE 
@@ -77,14 +80,22 @@ const unsigned char Zig_Zag[64] = { 0x00, 0x10, 0x01, 0x02, 0x11, 0x20, 0x30, 0x
 									0x56, 0x47, 0x57, 0x66, 0x75, 0x76, 0x67, 0x77 }; //7
 
 // ********************************  8 x 8 Block Decleraion    ********************************
-int base_int_block[8][8];
-float base_float_block[8][8];
-int resi_int_block[8][8];
-float resi_float_block[8][8];
+#if INTEGER_OPERATION
+	int base_int_block[8][8];
+	int resi_int_block[8][8];
+#else
+	float base_float_block[8][8];
+	float resi_float_block[8][8];
+#endif
 
 // **************  Identifying the current decoding layer  ******************
 unsigned char base_resi_layer; //( 0 - Base layer & 1 - Residual Layer)
 
+// ************** Upsampled Block Array decleration **************
+unsigned char base_upsample_cb_block[32][8];
+unsigned char base_upsample_cr_block[32][8];
+unsigned char resi_upsample_cb_block[32][8];
+unsigned char resi_upsample_cr_block[32][8];
 
 // ******************************** Local Variables Decleration ********************************
 char argument[20]; // Identifying Input Argument

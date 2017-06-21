@@ -40,10 +40,14 @@ void feig_idct(void){
 	// Transfer block elements to FF array
 	for (row = 0; row < 8; row++)
 		for (col = 0; col < 8; col++){
-			if(base_resi_layer == 0)
-				FF[row * 8 + col] = base_float_block[row][col];
-			else
-				FF[row * 8 + col] = resi_float_block[row][col];
+			#if INTEGER_OPERATION
+			#else
+				if(base_resi_layer == 0)
+					FF[row * 8 + col] = base_float_block[row][col];
+				else
+					FF[row * 8 + col] = resi_float_block[row][col];
+			#endif
+
 		}
 
 	B1_Operation();	//B1 kronecker matrix multiplication with low multiplication and addition
@@ -55,10 +59,13 @@ void feig_idct(void){
 	// Transfer FF array elements to block 
 	for (row = 0; row < 8; row++)
 		for (col = 0; col < 8; col++){
-			if(base_resi_layer == 0)
-				base_float_block[row][col] = FF[row * 8 + col] + 128;		//128 for level shifting
-			else
-				resi_float_block[row][col] = FF[row * 8 + col] + 128;		//128 for level shifting
+			#if INTEGER_OPERATION
+			#else
+				if(base_resi_layer == 0)
+					base_float_block[row][col] = FF[row * 8 + col] + 128;		//128 for level shifting
+				else
+					resi_float_block[row][col] = FF[row * 8 + col] + 128;		//128 for level shifting
+			#endif
 		}
 
 }

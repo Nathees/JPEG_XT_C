@@ -1,16 +1,18 @@
 #ifndef JPEG_XT_DECODER_H_
 #define JPEG_XT_DECODER_H_
 
+#include "define.h"
 
 //  ******************************** Extern Variables Decleration ********************************
 
 // **************** Table Memory Decleration ****************
-// Base Quantization Table
-extern float base_float_quantization_table[64][2];
-extern int 	base_int_quantization_table[64][2];
-// Residual Quantization Table
-extern float resi_float_quantization_table[64][2];
-extern int 	resi_int_quantization_table[64][2];
+#if INTEGER_OPERATION
+	extern int 	base_int_quantization_table[64][2];
+	extern int 	resi_int_quantization_table[64][2];
+#else
+	extern float base_float_quantization_table[64][2];
+	extern float resi_float_quantization_table[64][2];
+#endif
 
 // Base Huffman Table
 extern unsigned char base_huffman_table_DC_1[65536][2]; //column 0 - HUFF_SIZE, 1 - HUFF_VALUE 
@@ -58,15 +60,24 @@ extern int img_width;
 extern const unsigned char Zig_Zag[64];
 
 // **************  8 x 8 Block Decleraion    ******************
-extern int base_int_block[8][8];
-extern float base_float_block[8][8];
-extern int resi_int_block[8][8];
-extern float resi_float_block[8][8];
+#if INTEGER_OPERATION
+	extern int base_int_block[8][8];
+	extern int resi_int_block[8][8];
+#else
+	extern float base_float_block[8][8];
+	extern float resi_float_block[8][8];
+#endif
 
 // **************  Identifying the current decoding layer  ******************
 extern unsigned char base_resi_layer; //( 0 - Base layer & 1 - Residual Layer)
 
 // ************** Common Control Variables ********************
 extern unsigned char row, col;
+
+// ************** Upsampled Block Array decleration **************
+extern unsigned char base_upsample_cb_block[32][8];
+extern unsigned char base_upsample_cr_block[32][8];
+extern unsigned char resi_upsample_cb_block[32][8];
+extern unsigned char resi_upsample_cr_block[32][8];
 
 #endif /* JPEG_XT_DECODER_H_ */
