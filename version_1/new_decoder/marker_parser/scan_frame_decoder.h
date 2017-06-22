@@ -6,6 +6,7 @@ void baseline_frame_decode(void);
 void extended_frame_decode(void);
 void progressive_frame_decode(void);
 void baseline_extended_frame_decode(void);
+void calculate_mcu(void);
 
 // Scan Decoder Functions
 void scan_decoder(void);

@@ -44,6 +44,7 @@ void initial_load_bitstream(void){
 	resi_diff_cb 	= 0;
 	resi_diff_cr 	= 0;
 
+	index_resi = 0;
 	for (row = 0; row < 4; row++){
 
 		if (base_resi_layer == 0)
@@ -63,12 +64,20 @@ void initial_load_bitstream(void){
 	huff_chk_bitstream = bitstream >> 16;
 }
 
-void huffman_decoder(unsigned char comp, unsigned char dht_dc_id, unsigned char dht_ac_id, unsigned char dqt_id){
+void huffman_decoder(unsigned char comp){
 
 	compenent = comp;
-	huff_dc_table_id = dht_dc_id;
-	huff_ac_table_id = dht_ac_id;
-	quant_table_id = dqt_id;
+
+	if(base_resi_layer == 0){
+		huff_dc_table_id = resi_huff_dc_id[compenent];
+		huff_ac_table_id = resi_huff_ac_id[compenent];
+		quant_table_id = resi_dqt_id[compenent];
+	}
+	else{
+		huff_dc_table_id = resi_huff_dc_id[compenent];
+		huff_ac_table_id = resi_huff_ac_id[compenent];
+		quant_table_id = resi_dqt_id[compenent];
+	}
 
 	reset_block();
 

@@ -55,6 +55,8 @@ extern unsigned char resi_huff_ac_id[3];
 // ************** Image Size Control Variables  **************
 extern int img_height;
 extern int img_width;
+extern int img_mcu_height;
+extern int img_mcu_width;
 
 // ************** Zig-Zag Control Variable ********************
 extern const unsigned char Zig_Zag[64];
@@ -79,5 +81,9 @@ extern unsigned char base_upsample_cb_block[32][8];
 extern unsigned char base_upsample_cr_block[32][8];
 extern unsigned char resi_upsample_cb_block[32][8];
 extern unsigned char resi_upsample_cr_block[32][8];
+
+
+// ******************************** Local Functions Declerations ******************************** 
+void initial_setup(void);
 
 #endif /* JPEG_XT_DECODER_H_ */

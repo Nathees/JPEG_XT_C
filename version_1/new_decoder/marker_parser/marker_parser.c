@@ -112,7 +112,7 @@ void skip_marker(void){
 }
 
 void get_residual_layer_bitstream(void){
-	while (app11_processed_bytes < app11_len){
+	while (app11_processed_bytes < app11_len - 1){
 		buffer_resi[index_resi++] = buffer[buff_index++];
 		app11_processed_bytes++;
 	}

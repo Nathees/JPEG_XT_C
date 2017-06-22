@@ -9,6 +9,7 @@
 
 
 char header_len;
+unsigned char comp_id;
 
 void baseline_frame_decode(void){
 	// Tracking Operation
@@ -81,37 +82,34 @@ void baseline_extended_frame_decode(void){
 	}
 
 	//********************************************Identify Component specification parameter*********************************************
-	for (int i = 0; i < Nf_Ns; i++){
+	for (comp_id = 0; comp_id < Nf_Ns; comp_id++){
 		buff_index++; app11_processed_bytes++;	// identifier of ith component
 
 		byte_file = buffer[buff_index++];	app11_processed_bytes++;		// horizontal and vertical subsampling factor of ith component
 
 		if(residual_layer_flag == 0){
-			base_hori_samp_factor[i] = byte_file;
-			base_hori_samp_factor[i] = base_hori_samp_factor[i] >> 4;
-			base_vert_samp_factor[i] = byte_file;
-			base_vert_samp_factor[i] = base_vert_samp_factor[i] & 0xF;
+			base_hori_samp_factor[comp_id] = byte_file >> 4;
+			base_vert_samp_factor[comp_id] = byte_file & 0xF;
 
-			base_dqt_id[i] = buff_index++; app11_processed_bytes++;	// quantization table identifier of ith component
-			if(base_dqt_id[i] > 1){
+			base_dqt_id[comp_id] = buffer[buff_index++]; app11_processed_bytes++;	// quantization table identifier of ith component
+			if(base_dqt_id[comp_id] > 1){
 				printf("This decoder supports 2 DQT Tables only\n");
 				exit(0);
 			}
 
 		}
 		else{
-			resi_hori_samp_factor[i] = byte_file;
-			resi_hori_samp_factor[i] = resi_hori_samp_factor[i] >> 4;
-			resi_vert_samp_factor[i] = byte_file;
-			resi_vert_samp_factor[i] = resi_vert_samp_factor[i] & 0xF;
+			resi_hori_samp_factor[comp_id] = byte_file >> 4;
+			resi_vert_samp_factor[comp_id] = byte_file & 0xF;
 
-			resi_dqt_id[i] = buff_index++; app11_processed_bytes++;	// quantization table identifier of ith component
-			if(resi_dqt_id[i] > 1){
+			resi_dqt_id[comp_id] = buffer[buff_index++]; app11_processed_bytes++;	// quantization table identifier of ith component
+			if(resi_dqt_id[comp_id] > 1){
 				printf("This decoder supports 2 DQT Tables only\n");
 				exit(0);
 			}
 		}
 	}
+	calculate_mcu();
 }
 
 void scan_decoder(void){
@@ -137,33 +135,28 @@ void scan_decoder(void){
 	}
 
 	//*******************************************Reading scan component specification parameter *****************************************
-	for(int i = 0; i < Nf_Ns; i++){
+	for(comp_id = 0; comp_id < 3; comp_id++){
 		buff_index++; app11_processed_bytes++; // identifier of ith component
 
 		byte_file = buffer[buff_index++];	app11_processed_bytes++;		// DC and AC huffmantable identifier
 
 		if(residual_layer_flag == 0){
-			base_huff_dc_id[i] = byte_file;
-			base_huff_dc_id[i] = base_huff_dc_id[i] >> 4;
-			base_huff_ac_id[i] = byte_file;
-			base_huff_ac_id[i] = base_huff_ac_id[i] & 0xF;
-			if(base_huff_dc_id[i] > 1 || base_huff_ac_id[i] > 1){
+			base_huff_dc_id[comp_id] = byte_file >> 4;
+			base_huff_ac_id[comp_id] = byte_file & 0xF;
+			if(base_huff_dc_id[comp_id] > 1 || base_huff_ac_id[comp_id] > 1){
 				printf("This decoder supports 2 DHT Tables only\n");
 				exit(0);
 			}
 		}
-		else{
-			resi_huff_dc_id[i] = byte_file;
-			resi_huff_dc_id[i] = resi_huff_dc_id[i] >> 4;
-			resi_huff_ac_id[i] = byte_file;
-			resi_huff_ac_id[i] = resi_huff_ac_id[i] & 0xF;
-			if(resi_huff_dc_id[i] > 1 || resi_huff_ac_id[i] > 1){
+		else{ 
+			resi_huff_dc_id[comp_id] = byte_file >> 4;
+			resi_huff_ac_id[comp_id] = byte_file & 0xF;
+			if(resi_huff_dc_id[comp_id] > 1 || resi_huff_ac_id[comp_id] > 1){
 				printf("This decoder supports 2 DHT Tables only\n");
 				exit(0);
 			}
 		}
 	}
-
 	//*************************************************Reading Ss, Se and Ah_Al parameters ****************************************************
 	buff_index = buff_index + 3;
 	app11_processed_bytes = app11_processed_bytes + 3;
@@ -172,6 +165,29 @@ void scan_decoder(void){
 	#if TRACKING_ENABLE
 		if(residual_layer_flag == 0){
 			printf("Image Width = %d\tImage Height = %d\n",img_width,img_height);
+			printf("MCU Width   = %d\tMCU Height   = %d\n",img_mcu_width,img_mcu_height);
 		}
 	#endif
+}
+
+void calculate_mcu(void){
+	if (img_height % 8)
+		img_mcu_height = img_height / 8 + 1;
+	else
+		img_mcu_height = img_height / 8;
+	if (img_width % 8)
+		img_mcu_width = img_width / 8 + 1;
+	else
+		img_mcu_width = img_width / 8;
+
+	// Calculatiing horizontal (img_mcu_width) and vertical (img_mcu_height) MCUs for the image
+	if (img_mcu_width % base_hori_samp_factor[0])
+		img_mcu_width = img_mcu_width / base_hori_samp_factor[0] + 1;
+	else
+		img_mcu_width = img_mcu_width / base_hori_samp_factor[0];
+
+	if (img_mcu_height % base_vert_samp_factor[0])
+		img_mcu_height = img_mcu_height / base_vert_samp_factor[0] + 1;
+	else
+		img_mcu_height = img_mcu_height / base_vert_samp_factor[0];
 }

@@ -49,6 +49,13 @@ void identify_upsample_type(void){
 
 void upsample(unsigned char layer){
 	cb_cr_layer = layer;
+	switch(upsample_type){
+		case 1 :	upsample_1(); break;
+		case 2 :	upsample_2(); break;
+		case 3 :	upsample_3(); break;
+		case 4 :	upsample_4(); break;
+		default:	break;
+	}
 }
 
 void upsample_1(void){
@@ -71,9 +78,16 @@ void upsample_1(void){
 }
 
 void upsample_2(void){
-	for(row = 0; row < 8; row++){
-		for(col = 0; col < 8; col++){
+	printf("Upsample Type 2 not implemented\n");
+	exit(0);
+}
 
-		}
-	}
+void upsample_3(void){
+	printf("Upsample Type 3 not implemented\n");
+	exit(0);
+}
+
+void upsample_4(void){
+	printf("Upsample Type 4 not implemented\n");
+	exit(0);
 }

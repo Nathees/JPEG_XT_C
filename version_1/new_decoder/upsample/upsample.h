@@ -1,8 +1,12 @@
-#ifndef HUFFMAN_DECODER_H_
-#define HUFFMAN_DECODER_H_
+#ifndef UPSAMPLE_H_
+#define UPSAMPLE_H_
 
 // Functions related to Upsampling Process
 void identify_upsample_type(void);
 void upsample(void);
+void upsample_1(void);
+void upsample_2(void);
+void upsample_3(void);
+void upsample_4(void);
 
-#endif /* HUFFMAN_DECODER_H_ */
+#endif /* UPSAMPLE_H_ */

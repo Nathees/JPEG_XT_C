@@ -10,15 +10,15 @@
 #include "io_file/io_file.h"
 #include "huffman_decoder/huffman_decoder.h"
 #include "idct/idct.h"
-#include "upsample/upsample.h";
+#include "upsample/upsample.h"
 
 
 //  ******************************** Extern Variables Decleration ********************************
 
 // **************** Table Memory Decleration ****************
 #if INTEGER_OPERATION
-	int 	base_int_quantization_table[64][2];
-	int 	resi_int_quantization_table[64][2];
+	int base_int_quantization_table[64][2];
+	int resi_int_quantization_table[64][2];
 #else
 	float base_float_quantization_table[64][2];
 	float resi_float_quantization_table[64][2];
@@ -65,6 +65,8 @@ unsigned char resi_huff_ac_id[3];
 // ************** Image Size Control Variables  **************
 int img_height;
 int img_width;
+int img_mcu_height;
+int img_mcu_width;
 
 // ************** Common Control Variables ********************
 unsigned char row, col;
@@ -100,12 +102,15 @@ unsigned char resi_upsample_cr_block[32][8];
 // ******************************** Local Variables Decleration ********************************
 char argument[20]; // Identifying Input Argument
 
+// Local Functions Declerations
+void initial_setup(void);
+
 
 int main(int argc, char* argv[]){
 
 
 
-	if(argc <= 2){ 				// Checking the sufficient Arguments
+	/*if(argc <= 2){ 				// Checking the sufficient Arguments
 		printf("Not Sufficient Arguments Entered\n");
 		exit(0);
 	}
@@ -122,10 +127,16 @@ int main(int argc, char* argv[]){
 		}
 		else{
 		}
-	}
+	}*/
 
 	read_jpeg(argv[1]);
 	marker_parser();
+	initial_setup();
 	return 0;
 }
 
+
+void initial_setup(void){
+	initial_load_bitstream();
+	identify_upsample_type();
+}
