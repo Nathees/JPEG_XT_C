@@ -73,17 +73,28 @@ extern const unsigned char Zig_Zag[64];
 // **************  Identifying the current decoding layer  ******************
 extern unsigned char base_resi_layer; //( 0 - Base layer & 1 - Residual Layer)
 
+// **************  Identifying ldr or hdr image  ******************
+extern unsigned char ldr_hdr_img; //( 0 - LDR Image & 1 - HDR Image)
+
 // ************** Common Control Variables ********************
 extern unsigned char row, col;
 
 // ************** Upsampled Block Array decleration **************
+extern unsigned char base_upsample_y_block[32][8];
 extern unsigned char base_upsample_cb_block[32][8];
 extern unsigned char base_upsample_cr_block[32][8];
+extern unsigned char resi_upsample_y_block[32][8];
 extern unsigned char resi_upsample_cb_block[32][8];
 extern unsigned char resi_upsample_cr_block[32][8];
 
+// ************** Decoded RGB Channel **************
+extern int channel_r[8000][6000];
+extern int channel_g[8000][6000];
+extern int channel_b[8000][6000];
 
 // ******************************** Local Functions Declerations ******************************** 
 void initial_setup(void);
+void base_decoder(void);
+void resi_decoder(void);
 
 #endif /* JPEG_XT_DECODER_H_ */

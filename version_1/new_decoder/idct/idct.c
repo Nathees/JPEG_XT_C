@@ -11,6 +11,6 @@
 
 
 void idct(void){
-	feig_idct();
+	//feig_idct();
 	fast_int_idct();
 }

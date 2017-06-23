@@ -19,4 +19,7 @@
 // define Decoder Tracking Enable operation
 #define TRACKING_ENABLE 1 	 	// (1 - Enable Tracking & 0 - Disable Tracking)	
 
+// define Residual Decode Enable operation
+#define RESIDUAL_DECODE_ENABLE 1 // (1 - Enable Residual Decoding & 0 - Disable Residual Decoding )	
+
 #endif /* DEFINE_H_ */

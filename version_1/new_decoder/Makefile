@@ -6,7 +6,8 @@ jpeg_xt_decoder		:	jpeg_xt_decoder.o
 						(cd huffman_decoder; make all)
 						(cd idct; make all)
 						(cd upsample; make all)
-						 g++ jpeg_xt_decoder.o marker_parser/*.o io_file/*.o huffman_decoder/*.o idct/*.o upsample/*.o -o jpeg_xt_decoder
+						(cd color_transform; make all)
+						 g++ jpeg_xt_decoder.o marker_parser/*.o io_file/*.o huffman_decoder/*.o idct/*.o upsample/*.o color_transform/*.o -o jpeg_xt_decoder
 
 jpeg_xt_decoder.o	: 	jpeg_xt_decoder.c
 						g++ -c jpeg_xt_decoder.c
@@ -18,4 +19,5 @@ clean 				:
 						(cd huffman_decoder; make clean)
 						(cd idct; make clean)
 						(cd upsample; make clean)
+						(cd color_transform; make clean)
 

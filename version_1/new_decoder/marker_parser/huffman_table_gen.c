@@ -57,7 +57,6 @@ void huffman_table_gen(void){
 		dqt_proc_bytes = dqt_proc_bytes + 1;
 
 		//*****************************Identify Li and store the HUFFSIZE to huffman_table[K][1]**************************************
-		J = 0;
 		Li = 0;
 		K = 0;
 		for (J = 1; J < 17; J++){

@@ -46,7 +46,8 @@ void marker_parser(void){
 }
 
 void APP11_process(void){
-	residual_layer_flag = 1;
+	residual_layer_flag = 1; 		// Indicating residual layer flag to local functions
+	ldr_hdr_img = 1; 				// Indicating HDR Image Detected to all of the files
 	app11_processed_bytes = 0;
 
 	app11_len = buffer[buff_index++];
@@ -112,8 +113,12 @@ void skip_marker(void){
 }
 
 void get_residual_layer_bitstream(void){
-	while (app11_processed_bytes < app11_len - 1){
-		buffer_resi[index_resi++] = buffer[buff_index++];
-		app11_processed_bytes++;
-	}
+	#if RESIDUAL_DECODE_ENABLE
+		while (app11_processed_bytes < app11_len - 1){
+			buffer_resi[index_resi++] = buffer[buff_index++];
+			app11_processed_bytes++;
+		}
+	#else
+		buff_index = buff_index + app11_len - app11_processed_bytes - 1;
+	#endif
 }

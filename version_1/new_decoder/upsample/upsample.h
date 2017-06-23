@@ -3,7 +3,7 @@
 
 // Functions related to Upsampling Process
 void identify_upsample_type(void);
-void upsample(void);
+void upsample(unsigned char layer);
 void upsample_1(void);
 void upsample_2(void);
 void upsample_3(void);

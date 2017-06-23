@@ -9,9 +9,12 @@ unsigned char compenent = 0, huff_dc_table_id = 0, huff_ac_table_id = 0, quant_t
 
 
 // Variables Used for huffman decoder
-int bitstream;
-int huff_chk_bitstream;
-int bitstream_state;
+unsigned int huff_base_chk_bitstream;
+unsigned int huff_resi_chk_bitstream;
+unsigned int base_bitstream;
+unsigned int resi_bitstream;
+unsigned char base_bitstream_state;
+unsigned char resi_bitstream_state;
 
 unsigned char huffsize;
 unsigned char huff_value;
@@ -34,9 +37,10 @@ int resi_diff_cr;
 int value_max, value_min;	//value max and min calculated based on size
 
 void initial_load_bitstream(void){
-	bitstream = 0;
-	huff_chk_bitstream = 0;
-
+	base_bitstream = 0;
+	resi_bitstream = 0;
+	huff_base_chk_bitstream = 0;
+	huff_resi_chk_bitstream = 0;
 	base_diff_y 	= 0;
 	base_diff_cb 	= 0;
 	base_diff_cr 	= 0;
@@ -44,24 +48,24 @@ void initial_load_bitstream(void){
 	resi_diff_cb 	= 0;
 	resi_diff_cr 	= 0;
 
-	index_resi = 0;
-	for (row = 0; row < 4; row++){
-
-		if (base_resi_layer == 0)
-			byte_file = buffer[buff_index++];
-		else
-			byte_file = buffer_resi[index_resi++];
-
-		if (byte_file == 0xFF){
-			if(base_resi_layer == 0)
-				buff_index++;
-			else
-				index_resi++;
-		}
-		bitstream = bitstream + (byte_file << (24 - 8 * row));
+	for(row = 0; row < 4; row++){
+		byte_file = buffer[buff_index++];
+		if (byte_file == 0xFF)
+			buff_index++;
+		base_bitstream = base_bitstream + (byte_file << (24 - 8 * row));
 	}
-	bitstream_state = 32;
-	huff_chk_bitstream = bitstream >> 16;
+	base_bitstream_state = 32;
+	huff_base_chk_bitstream = base_bitstream >> 16;
+
+	index_resi = 0;
+	for(row = 0; row < 4; row++){
+		byte_file = buffer_resi[index_resi++];
+		if (byte_file == 0xFF)
+			index_resi++;
+		resi_bitstream = resi_bitstream + (byte_file << (24 - 8 * row));
+	}
+	resi_bitstream_state = 32;
+	huff_resi_chk_bitstream = resi_bitstream >> 16;
 }
 
 void huffman_decoder(unsigned char comp){
@@ -109,22 +113,22 @@ void dc_huffman_decode(void){
 	// Get Huffman Code Size and Huffman Value of particular huffman Check Bitstream
 	if(base_resi_layer == 0){
 		switch (huff_dc_table_id){
-			case 0x00:	huffsize 	= base_huffman_table_DC_1[huff_chk_bitstream][0]; 
-						huff_value 	= base_huffman_table_DC_1[huff_chk_bitstream][1];
+			case 0x00:	huffsize 	= base_huffman_table_DC_1[huff_base_chk_bitstream][0]; 
+						huff_value 	= base_huffman_table_DC_1[huff_base_chk_bitstream][1];
 						break;
-			case 0x01:	huffsize 	= base_huffman_table_DC_2[huff_chk_bitstream][0]; 
-						huff_value 	= base_huffman_table_DC_2[huff_chk_bitstream][1]; 
+			case 0x01:	huffsize 	= base_huffman_table_DC_2[huff_base_chk_bitstream][0]; 
+						huff_value 	= base_huffman_table_DC_2[huff_base_chk_bitstream][1];
 						break;
 			default:	break;
 		}
 	}
 	else{
 		switch (huff_dc_table_id){
-			case 0x00:	huffsize 	= resi_huffman_table_DC_1[huff_chk_bitstream][0]; 
-						huff_value 	= resi_huffman_table_DC_1[huff_chk_bitstream][1];
+			case 0x00:	huffsize 	= resi_huffman_table_DC_1[huff_resi_chk_bitstream][0]; 
+						huff_value 	= resi_huffman_table_DC_1[huff_resi_chk_bitstream][1];
 						break;
-			case 0x01:	huffsize 	= resi_huffman_table_DC_2[huff_chk_bitstream][0]; 
-						huff_value 	= resi_huffman_table_DC_2[huff_chk_bitstream][1]; 
+			case 0x01:	huffsize 	= resi_huffman_table_DC_2[huff_resi_chk_bitstream][0]; 
+						huff_value 	= resi_huffman_table_DC_2[huff_resi_chk_bitstream][1]; 
 						break;
 			default:	break;
 		}
@@ -133,7 +137,10 @@ void dc_huffman_decode(void){
 	
 	// Read the code word
 	code_word = 0;
-	code_word = huff_chk_bitstream >> (16 - huff_value);
+	if(base_resi_layer == 0)
+		code_word = huff_base_chk_bitstream >> (16 - huff_value);
+	else
+		code_word = huff_resi_chk_bitstream >> (16 - huff_value);
 	shift(huff_value);		// Shift the bits of the Huffman Value
 	calculate_value();
 
@@ -179,22 +186,22 @@ void ac_huffman_decode(void){
 		// Get Huffman Code Size and Huffman Value of particular huffman Check Bitstream
 		if(base_resi_layer == 0){
 			switch (huff_ac_table_id){
-				case 0x00:	huffsize 	= base_huffman_table_AC_1[huff_chk_bitstream][0]; 
-							huff_value 	= base_huffman_table_AC_1[huff_chk_bitstream][1];
+				case 0x00:	huffsize 	= base_huffman_table_AC_1[huff_base_chk_bitstream][0]; 
+							huff_value 	= base_huffman_table_AC_1[huff_base_chk_bitstream][1];
 							break;
-				case 0x01:	huffsize 	= base_huffman_table_AC_2[huff_chk_bitstream][0]; 
-							huff_value 	= base_huffman_table_AC_2[huff_chk_bitstream][1]; 
+				case 0x01:	huffsize 	= base_huffman_table_AC_2[huff_base_chk_bitstream][0]; 
+							huff_value 	= base_huffman_table_AC_2[huff_base_chk_bitstream][1]; 
 							break;
 				default:	break;
 			}
 		}
 		else{
 			switch (huff_ac_table_id){
-				case 0x00:	huffsize 	= resi_huffman_table_AC_1[huff_chk_bitstream][0]; 
-							huff_value 	= resi_huffman_table_AC_1[huff_chk_bitstream][1];
+				case 0x00:	huffsize 	= resi_huffman_table_AC_1[huff_resi_chk_bitstream][0]; 
+							huff_value 	= resi_huffman_table_AC_1[huff_resi_chk_bitstream][1];
 							break;
-				case 0x01:	huffsize 	= resi_huffman_table_AC_2[huff_chk_bitstream][0]; 
-							huff_value 	= resi_huffman_table_AC_2[huff_chk_bitstream][1]; 
+				case 0x01:	huffsize 	= resi_huffman_table_AC_2[huff_resi_chk_bitstream][0]; 
+							huff_value 	= resi_huffman_table_AC_2[huff_resi_chk_bitstream][1]; 
 							break;
 				default:	break;
 			}
@@ -207,7 +214,10 @@ void ac_huffman_decode(void){
 		
 		// Read the code word
 		code_word = 0;
-		code_word = huff_chk_bitstream >> (16 - huff_value);
+		if(base_resi_layer == 0)
+			code_word = huff_base_chk_bitstream >> (16 - huff_value);
+		else
+			code_word = huff_resi_chk_bitstream >> (16 - huff_value);
 		shift(huff_value);		// Shift the bits of the Huffman Value
 		calculate_value();
 
@@ -232,28 +242,38 @@ void ac_huffman_decode(void){
 
 void shift(unsigned char shift){
 	if (shift > 0){
-		huff_chk_bitstream = 0;
-		for (row = 0; row < shift; row++){
-			if (bitstream_state == 24){
 
-				if (base_resi_layer == 0)
+		if (base_resi_layer == 0){
+			huff_base_chk_bitstream = 0;
+			for (row = 0; row < shift; row++){
+				if (base_bitstream_state == 24){
 					byte_file = buffer[buff_index++];
-				else
-					byte_file = buffer_resi[index_resi++];
-
-				if (byte_file == 0xFF){
-					if(base_resi_layer == 0)
+					if (byte_file == 0xFF)
 						buff_index++;
-					else
-						index_resi++;
+					base_bitstream = base_bitstream + byte_file;
+					base_bitstream_state = 32;
 				}
-				bitstream = bitstream + byte_file;
-				bitstream_state = 32;
+				base_bitstream = base_bitstream << 1;
+				base_bitstream_state = base_bitstream_state - 1;
 			}
-			bitstream = bitstream << 1;
-			bitstream_state = bitstream_state - 1;
+			huff_base_chk_bitstream = (base_bitstream >> 16);
 		}
-		huff_chk_bitstream = (bitstream >> 16);
+		else{
+			huff_resi_chk_bitstream = 0;
+			for (row = 0; row < shift; row++){
+				if (resi_bitstream_state == 24){
+					byte_file = buffer_resi[index_resi++];
+					if (byte_file == 0xFF)
+						index_resi++;
+					resi_bitstream = resi_bitstream + byte_file;
+					resi_bitstream_state = 32;
+				}
+				resi_bitstream = resi_bitstream << 1;
+				resi_bitstream_state = resi_bitstream_state - 1;
+			}
+			huff_resi_chk_bitstream = (resi_bitstream >> 16);
+		}
+
 	}
 }
 

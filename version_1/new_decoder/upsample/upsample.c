@@ -7,10 +7,10 @@
 
 // Local variable decleration
 unsigned char upsample_type;
-unsigned char cb_cr_layer; // Cb = 0 & Cr = 1
+unsigned char comp_layer; // y = 0, Cb = 1 & Cr = 2
 
 void identify_upsample_type(void){
-	if(base_resi_layer == 0){
+	if(ldr_hdr_img == 1){
 		for(row = 0; row < 3; row++){
 			if(base_hori_samp_factor[row] != resi_hori_samp_factor[row] || base_vert_samp_factor[row] != resi_vert_samp_factor[row]){
 				printf("Base and Residual sampling factors are mismatch\n");
@@ -43,12 +43,17 @@ void identify_upsample_type(void){
 
 	// Tracking Operation
 	#if TRACKING_ENABLE
-		printf("Upsampling Type = %d\n",upsample_type);
+		printf("Upsampling Type - %d\n",upsample_type);
 	#endif
+
+	if(upsample_type != 1){
+		printf("Upsample Type %d not implemented\n",upsample_type);
+		exit(0);
+	}
 }
 
 void upsample(unsigned char layer){
-	cb_cr_layer = layer;
+	comp_layer = layer;
 	switch(upsample_type){
 		case 1 :	upsample_1(); break;
 		case 2 :	upsample_2(); break;
@@ -61,17 +66,27 @@ void upsample(unsigned char layer){
 void upsample_1(void){
 	for(row = 0; row < 8; row++){
 		for(col = 0; col < 8; col++){
-			if(base_resi_layer){
-				if(cb_cr_layer == 0)
-					base_upsample_cb_block[row][col] = (unsigned char)base_int_block[row][col];
-				else
-					base_upsample_cr_block[row][col] = (unsigned char)base_int_block[row][col];
+			if(base_resi_layer == 0){
+				switch(comp_layer){
+					case 	0 	:	base_upsample_y_block[row][col] = (unsigned char)base_int_block[row][col];
+									break;
+					case 	1 	:	base_upsample_cb_block[row][col] = (unsigned char)base_int_block[row][col];
+									break;
+					case 	2 	:	base_upsample_cr_block[row][col] = (unsigned char)base_int_block[row][col];
+									break;
+					default		:	break;
+				}
 			}
 			else{
-				if(cb_cr_layer == 0)
-					base_upsample_cb_block[row][col] = (unsigned char)resi_int_block[row][col];
-				else
-					base_upsample_cr_block[row][col] = (unsigned char)resi_int_block[row][col];				
+				switch(comp_layer){
+					case 	0 	:	resi_upsample_y_block[row][col] = (unsigned char)resi_int_block[row][col];
+									break;
+					case 	1 	:	resi_upsample_cb_block[row][col] = (unsigned char)resi_int_block[row][col];
+									break;
+					case 	2 	:	resi_upsample_cr_block[row][col] = (unsigned char)resi_int_block[row][col];
+									break;
+					default		:	break;
+				}			
 			}
 		}
 	}

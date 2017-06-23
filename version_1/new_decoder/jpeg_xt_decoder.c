@@ -11,6 +11,7 @@
 #include "huffman_decoder/huffman_decoder.h"
 #include "idct/idct.h"
 #include "upsample/upsample.h"
+#include "color_transform/color_transform.h"
 
 
 //  ******************************** Extern Variables Decleration ********************************
@@ -93,17 +94,31 @@ const unsigned char Zig_Zag[64] = { 0x00, 0x10, 0x01, 0x02, 0x11, 0x20, 0x30, 0x
 // **************  Identifying the current decoding layer  ******************
 unsigned char base_resi_layer; //( 0 - Base layer & 1 - Residual Layer)
 
+// **************  Identifying ldr or hdr image  ******************
+unsigned char ldr_hdr_img = 0; //( 0 - LDR Image & 1 - HDR Image)
+
 // ************** Upsampled Block Array decleration **************
+unsigned char base_upsample_y_block[32][8];
 unsigned char base_upsample_cb_block[32][8];
 unsigned char base_upsample_cr_block[32][8];
+unsigned char resi_upsample_y_block[32][8];
 unsigned char resi_upsample_cb_block[32][8];
 unsigned char resi_upsample_cr_block[32][8];
+
+// ************** Decoded RGB Channel **************
+int channel_r[8000][6000];
+int channel_g[8000][6000];
+int channel_b[8000][6000];
 
 // ******************************** Local Variables Decleration ********************************
 char argument[20]; // Identifying Input Argument
 
+int img_mcu_x, img_mcu_y, img_comp, img_hori_sam_fact, img_vert_sam_fact;
+
 // Local Functions Declerations
 void initial_setup(void);
+void base_decoder(void);
+void resi_decoder(void);
 
 
 int main(int argc, char* argv[]){
@@ -132,6 +147,34 @@ int main(int argc, char* argv[]){
 	read_jpeg(argv[1]);
 	marker_parser();
 	initial_setup();
+
+	for (img_mcu_y = 0; img_mcu_y < img_mcu_height; img_mcu_y++){		//img_mcu_height
+		for (img_mcu_x = 0; img_mcu_x < img_mcu_width; img_mcu_x++){	//img_mcu_width
+
+			for (img_comp = 0; img_comp < 3; img_comp++){				// No of Components
+				for (img_vert_sam_fact = 0; img_vert_sam_fact < base_vert_samp_factor[img_comp]; img_vert_sam_fact++){ 
+					for (img_hori_sam_fact = 0; img_hori_sam_fact < base_hori_samp_factor[img_comp]; img_hori_sam_fact++){
+						
+						for(base_resi_layer = 0; base_resi_layer <= ldr_hdr_img; base_resi_layer++){
+							if(base_resi_layer == 0)
+								base_decoder();
+							else{
+								#if RESIDUAL_DECODE_ENABLE
+									resi_decoder();
+								#endif
+							}
+						}
+
+					}
+				}
+			}
+		}
+	}
+	printf("%.2X\n", buffer[buff_index - 4]);
+	printf("%.2X\n", buffer[buff_index - 3]);
+
+	printf("%.2X\n", buffer_resi[index_resi - 4]);
+	printf("%.2X\n", buffer_resi[index_resi - 3]);
 	return 0;
 }
 
@@ -139,4 +182,23 @@ int main(int argc, char* argv[]){
 void initial_setup(void){
 	initial_load_bitstream();
 	identify_upsample_type();
+
+	// Tracking Operation
+	#if TRACKING_ENABLE
+		printf("Start Decoding.....\n");
+	#endif
 }
+
+void base_decoder(void){
+	huffman_decoder(img_comp);
+	idct();
+	upsample(img_comp);
+	color_transform(img_mcu_y, img_mcu_x);
+}
+
+void resi_decoder(void){
+	huffman_decoder(img_comp);
+	idct();
+	upsample(img_comp);
+}
+
