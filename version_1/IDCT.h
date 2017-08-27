@@ -4,6 +4,7 @@
 extern const int DCT_T[8][8];
 extern float modified_quantization_table[64][2];
 extern int integer_modified_quantization_table[64][2];
+extern int integer_modified_resi_quantization_table[64][2];
 
 extern float inverse_IDCT_blk[8][8];
 
@@ -13,11 +14,12 @@ void kronecker_matrix_mult(int num1, float num2, int num3, int num4, int num5, i
 
 //************************************* Modify the quantization table for the Feig implementation*******************************
 void modify_quantization_table(unsigned char table_id);
+void modify_resi_quantization_table(unsigned char table_id);
 
 
 
 //*************************************** Normal IDCT Method*******************************************************************
-void normal_IDCT(void);
+void normal_IDCT(unsigned char comp);
 
 //*****************************************Hardcode Implementation of Feig IDCT*********************************************
 void Hardcode_Feig_IDCT(void);

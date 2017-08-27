@@ -18,6 +18,7 @@ const int int_R = 42813; // R1 = C2 + C6 = 2.6131259297527530557132863468544 * 2
 
 float modified_quantization_table[64][2];
 int integer_modified_quantization_table[64][2];
+int integer_modified_resi_quantization_table[64][2];
 
 //Kronector matrix initilization
 char kronector_B1[64][64];
@@ -80,7 +81,7 @@ void modify_quantization_table_feig(unsigned char table_id){
 
 void modify_quantization_table(unsigned char table_id){
 
-	for (unsigned char i = 0; i < 8; i++){
+	/*for (unsigned char i = 0; i < 8; i++){
 		for (unsigned char j = 0; j < 8; j++){
 			row = Zig_Zag[i * 8 + j] & 0xF;
 			col = Zig_Zag[i * 8 + j] >> 4;
@@ -89,8 +90,7 @@ void modify_quantization_table(unsigned char table_id){
 			else
 				modified_quantization_table[i * 8 + j][table_id] = ((float)quantization_table[i * 8 + j][table_id] / 2.0)  * cos((float)pi * col / 16.0);
 		}
-	}
-	int max_1;
+	}*/
 	for (unsigned char i = 0; i < 8; i++){
 		for (unsigned char j = 0; j < 8; j++){
 			row = Zig_Zag[i * 8 + j] & 0xF;
@@ -102,10 +102,21 @@ void modify_quantization_table(unsigned char table_id){
 			
 }
 
+void modify_resi_quantization_table(unsigned char table_id){
+	for (unsigned char i = 0; i < 8; i++){
+		for (unsigned char j = 0; j < 8; j++){
+			row = Zig_Zag[i * 8 + j] & 0xF;
+			col = Zig_Zag[i * 8 + j] >> 4;
+			int temp = resi_quantization_table[i * 8 + j][table_id] * cos_val[col];
+			integer_modified_resi_quantization_table[i * 8 + j][table_id] = ((temp >> 4) + 1) >> 1; // ((temp >> 5) + 1) >> 1;  ((temp >> 11) + 1) >> 1;
+		}
+	}	
+}
+
 
 //**************************************IDCT Normal ****************************************************************************
 
-void normal_IDCT(){
+void normal_IDCT(unsigned char comp){
 	unsigned char u, v;
 	float norm_factor;
 	float temp = 0;
@@ -122,15 +133,43 @@ void normal_IDCT(){
 					else
 						norm_factor = 1;
 
-					temp = temp + norm_factor * block_temp[u][v] * cos((float)(2 * row + 1)*u / 16 * pi) * cos((float)(2 * col + 1)*v / 16 * pi);
+					temp = temp + norm_factor * block[u][v] * cos((float)(2 * row + 1)*u / 16 * pi) * cos((float)(2 * col + 1)*v / 16 * pi);
 				}
 			}
 
-			inverse_IDCT_blk[row][col] = temp * 0.25 + 128;	// 128 for level shifting
+			/*inverse_IDCT_blk[row][col] = temp * 0.25 + 128;	// 128 for level shifting
 			if (inverse_IDCT_blk[row][col] > 255)
 				inverse_IDCT_blk[row][col] = 255;
 			else if (inverse_IDCT_blk[row][col] < 0)
-				inverse_IDCT_blk[row][col] = 0;
+				inverse_IDCT_blk[row][col] = 0;*/
+			inverse_IDCT_blk[row][col] = temp * 0.25;
+			if(resi_tbox_flag == 0){
+				if (comp == 0)
+					inverse_IDCT_blk[row][col] = inverse_IDCT_blk[row][col] + 128.0; // Level Shift
+			}
+			else{
+				inverse_IDCT_blk[row][col] = inverse_IDCT_blk[row][col] + 128.0; // Level Shift
+
+				if(inverse_IDCT_blk[row][col] < 0)
+					inverse_IDCT_blk[row][col] = 0;
+				else if(inverse_IDCT_blk[row][col] > 255)
+					inverse_IDCT_blk[row][col] = 255;
+				//inverse_IDCT_blk[row][col] = (inverse_IDCT_blk[row][col] >= 0) ? ((integer_block[row][col] <= 256.0) ? integer_block[row][col] : 256.0) : 0;
+				inverse_IDCT_blk[row][col] = inverse_IDCT_blk[row][col] * 256.0;
+
+				if (comp != 0){
+					inverse_IDCT_blk[row][col] = inverse_IDCT_blk[row][col] - 32768;
+				}
+			}
+		}
+	}
+	for (row = 0; row < 8; row++){
+		for (col = 0; col < 8; col++){
+			switch (comp){
+			case 0: integer_block_y[row][col] = inverse_IDCT_blk[row][col]; break;
+			case 1: integer_block_cb[row][col] = inverse_IDCT_blk[row][col]; break;
+			case 2: integer_block_cr[row][col] = inverse_IDCT_blk[row][col]; break;
+			}
 		}
 	}
 }
@@ -980,11 +1019,21 @@ void Integer_IDCT(unsigned char comp){
 	for (row = 0; row < 8; row++){
 		for (col = 0; col < 8; col++){
 			integer_block[row][col] = ((integer_block[row][col] >> 3) + 1)>>1; // ((rtl_block[row][col] >> 3) + 1) >> 1;
-			integer_block[row][col] = integer_block[row][col] + 128; // Level Shift
-			if (integer_block[row][col] < 0)
-				integer_block[row][col] = 0;
-			else if (integer_block[row][col] > 255)
-				integer_block[row][col] = 255;
+
+			if(resi_tbox_flag == 0){
+				if (comp == 0)
+					integer_block[row][col] = integer_block[row][col] + 128; // Level Shift
+			}
+			else{
+				integer_block[row][col] = integer_block[row][col] + 128; // Level Shift
+
+				integer_block[row][col] = (integer_block[row][col] >= 0) ? ((integer_block[row][col] <= 256) ? integer_block[row][col] : 256) : 0;
+				integer_block[row][col] = integer_block[row][col] * 256;
+
+				if (comp != 0){
+					integer_block[row][col] = integer_block[row][col] - 32768;
+				}
+			}
 		}
 	}
 
@@ -992,9 +1041,9 @@ void Integer_IDCT(unsigned char comp){
 	for (row = 0; row < 8; row++){
 		for (col = 0; col < 8; col++){
 			switch (comp){
-			case 0: integer_block_y[row][col] = integer_block[row][col];
-			case 1: integer_block_cb[row][col] = integer_block[row][col];
-			case 2: integer_block_cr[row][col] = integer_block[row][col];
+			case 0: integer_block_y[row][col] = integer_block[row][col];break;
+			case 1: integer_block_cb[row][col] = integer_block[row][col]; break;
+			case 2: integer_block_cr[row][col] = integer_block[row][col];break;
 			}
 		}
 	}

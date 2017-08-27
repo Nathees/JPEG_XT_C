@@ -9,6 +9,7 @@ extern int huffcode_DC_identifier[16][2];	//this array contains the index of fir
 extern unsigned char huff_size[256];
 
 extern unsigned char quantization_table[64][4];
+extern unsigned char resi_quantization_table[64][4];
 
 //unsigned char no_of_huff_code_len_i[16];				//Array for store the number of huffman code length of each i
 

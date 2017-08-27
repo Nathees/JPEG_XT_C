@@ -1,16 +1,15 @@
+// going to add support for half precesion float
 #include <stdio.h>
 #include "math.h"
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "define.h"
 #include "Bitstream.h"
 #include "Main.h"
 #include "Huffman.h"
 #include "IDCT.h"
 #include "Upsampling.h"
-
 
 FILE *file_jpeg;
 //FILE *fp1;		// For Feig_IDCT
@@ -19,6 +18,7 @@ FILE *file_jpeg;
 //FILE *fp4;		// For Dequantized_Feig_block
 //FILE *fp5;		// For Y, Cb, Cr components
 FILE *ppm;		// For make the RGB file in PPM mode 
+FILE * base_rgb;
 
 // Global variable decleration
 unsigned char *buffer;		// Contains the all image
@@ -39,6 +39,14 @@ int integer_block[8][8];
 float block_temp[8][8];
 
 FILE *tone_map;
+
+
+//int **RGB_R;
+//int **RGB_G;
+//int **RGB_B;
+/*int RGB_R[8000][8000];
+int RGB_G[8000][8000];
+int RGB_B[8000][8000];*/
 
 int resi_y[8000][8000];
 int resi_cb[8000][8000];
@@ -84,53 +92,31 @@ void check_SOI_marker();
 void create_dynamic_array_RGB();
 void YCbCr_to_RGB();
 
-void generate_PPM_File(char *name, unsigned char type);
+void generate_PPM_File(char *name);
 void generate_PFM_File(char *name);
 
 void calculate_psnr();
 
 
+
+int float_temp;
+int int_float_error;
+int diff_idct;
+int rgb_error;
+
 int main(int argc, char* argv[]){
-
-#if (XX && YY)
-	printf("X\n");
-
-#elif YY
-	printf("Y\n");
-#else
-	printf("Z\n");
-#endif
-
-	// Identifying Input Argument
-	char argument[20];
-
-	if(argc <= 2){ 				// Checking the sufficient Arguments
-		printf("Not Sufficient Arguments Entered\n");
-		exit(0);
-	}
-	else if(argc == 3){ 		// Checking the correctness of passed arguments (input & output files)
-		strcpy(argument, argv[1]);
-		if(argument[0] == '-'){
-			printf("Entered Argument is wrong\n");
-			exit(0);
-		}
-		strcpy(argument, argv[2]);
-		if(argument[0] == '-'){
-			printf("Entered Argument is wrong\n");
-			exit(0);
-		}
-		else{
-
-		}
-	}
-
 
 	count = 0;
 	open_file(argv[1]); // LG0056_c
-	copy_file_to_memory(); 
+	copy_file_to_memory();
 	check_SOI_marker();
+
 	
 	// *********************************  Reading Marker Syntax Details    ************************************************
+
+
+	//debug_resi = fopen("test_huffman_resi.txt","wb");
+	//debug_base = fopen("test_huffman_base.txt","wb");
 
 	clock_t t;
 	t = clock();
@@ -199,6 +185,7 @@ int main(int argc, char* argv[]){
 	//**************************************************Decoding Starts from here**********************************************
 	int x, y;
 	unsigned char comp, H, V;
+
 	
 	for (x = 0; x < MCU_Y; x++){//MCU_Y
 		for (y = 0; y < MCU_X; y++){//MCU_X
@@ -207,14 +194,8 @@ int main(int argc, char* argv[]){
 					for (H = 0; H < comp_specific_param[comp][1]; H++){ //run upto ith component horizontal sampling factor comp_specific_param[comp][1]
 						
 						Huffman_decode(comp, comp_specific_param[comp][4], comp_specific_param[comp][5], comp_specific_param[comp][3]);
-						
-					
+									
 						Integer_IDCT(comp);
-
-						if (upsampling_type != 1 && comp != 0){
-							upsampling_cbcr_integer(comp);
-						}
-
 						if (comp == 2){
 							color_transform_integer(x, y);
 							tone_mapping(x, y);							
@@ -225,17 +206,8 @@ int main(int argc, char* argv[]){
 		}
 	}
 
-	/*if (upsampling_type != 1){
-		upsampling_CbCr(upsampling_type);
-	}*/
-
-	//YCbCr_to_RGB();
-	//generate_PPM_File("output_float.ppm",1); // Float operation output Image
-	//generate_PPM_File("hdr.ppm",2); // Integer operation output Image
-
 	generate_PFM_File(argv[2]);
-
-	//calculate_psnr();
+	//generate_PPM_File(argv[2]);
 	return 0;
 }
 
@@ -246,17 +218,16 @@ void residual_decode_process(){
 	int x, y;
 	unsigned char comp, H, V;
 
-
-	//tone_map = fopen("Tone_Mapped", "wb");
-
-	for (x = 0; x < MCU_Y - 1; x++){//MCU_Y
+	for (x = 0; x < MCU_Y; x++){//MCU_Y
 		for (y = 0; y < MCU_X; y++){//MCU_X
 			for (comp = 0; comp < Nf; comp++){//Nf
 				for (V = 0; V < comp_specific_param[comp][2]; V++){ //run upto ith component vertical sampling factor  comp_specific_param[comp][2]
 					for (H = 0; H < comp_specific_param[comp][1]; H++){ //run upto ith component horizontal sampling factor comp_specific_param[comp][1]
 
 						Huffman_decode(comp, comp_specific_param[comp][4], comp_specific_param[comp][5], comp_specific_param[comp][3]);
+
 						Integer_IDCT(comp);
+
 						if (comp == 2){
 							resi_layer_transfer_element(x, y);
 						}
@@ -380,7 +351,7 @@ float sixteento32float(int x){
 }
 
 
-void generate_PPM_File(char *name, unsigned char type){
+void generate_PPM_File(char *name){
 	ppm = fopen(name, "wb");
 	//ppm = fopen("Decoded_Image.ppm", "wb");
 	unsigned char ppm_syntax;
@@ -446,26 +417,58 @@ void generate_PPM_File(char *name, unsigned char type){
 	// UPLOADING RGB PIXELS to PPM
 	for (int i = 0; i < Y; i++){
 		for (int j = 0; j < X; j++){
-			if (type == 1){
-				/*fwrite(&RGB_R[i][j], 1, 1, ppm);
-				fwrite(&RGB_G[i][j], 1, 1, ppm);
-				fwrite(&RGB_B[i][j], 1, 1, ppm);*/
-			}
-			if (type == 2){
-				fwrite(&integer_R[i][j], 1, 1, ppm);
-				fwrite(&integer_G[i][j], 1, 1, ppm);
-				fwrite(&integer_B[i][j], 1, 1, ppm);
-			}
+			fwrite(&integer_R[i][j], 1, 1, ppm);
+			fwrite(&integer_G[i][j], 1, 1, ppm);
+			fwrite(&integer_B[i][j], 1, 1, ppm);
 		}
 	}
 	fclose(ppm);
 }
 
+/*void generate_PFM_File(char *name){
+	FILE * pfm;
+	char byte20[20];
+	unsigned int i, j, k, l, count;
+
+	float hdr_r, hdr_g, hdr_b;
+	//unsigned char R, G, B;
+	//int intR,intG, intB;
+
+	pfm = fopen(name, "wb");
+	k = 6;
+	l = 2;
+
+	fwrite("PF\n", 3, 1, pfm);
+	count = sprintf(byte20, "%d", X);
+	fwrite(byte20, 1, count, pfm);
+	fwrite(" ", 1, 1, pfm);
+	count = sprintf(byte20, "%d", Y);
+	fwrite(byte20, 1, count, pfm);
+
+	fwrite("\n-1.000000\n", 11, 1, pfm);
+
+	for (i = 0; i < Y; i++)
+		for (j = 0; j < X; j++)
+		{
+			{
+				hdr_r = sixteento32float(integer_R[i][j]);
+				hdr_g = sixteento32float(integer_G[i][j]);
+				hdr_b = sixteento32float(integer_B[i][j]);
+
+				fwrite(&hdr_r, 4, 1, pfm);
+				fwrite(&hdr_g, 4, 1, pfm);
+				fwrite(&hdr_b, 4, 1, pfm);
+			}
+
+		}
+	fclose(pfm);
+}*/
+
 void generate_PFM_File(char *name){
 	FILE * pfm;
 	char byte20[20];
 	unsigned int i, j, k, l, count;
-	char msb,lsb;
+	char msb, lsb;
 
 	float hdr_r, hdr_g, hdr_b;
 	int int_r, int_g, int_b;
@@ -476,8 +479,8 @@ void generate_PFM_File(char *name){
 	k = 6;
 	l = 2;
 
-	fwrite("PF\n", 3, 1, pfm);
-	//fwrite("P6\n", 3, 1, pfm);
+	//fwrite("PF\n", 3, 1, pfm);
+	fwrite("P6\n", 3, 1, pfm);
 
 	count = sprintf(byte20, "%d", X);
 	fwrite(byte20, 1, count, pfm);
@@ -486,57 +489,28 @@ void generate_PFM_File(char *name){
 	fwrite(byte20, 1, count, pfm);
 
 	//fwrite("\n-1.0\n", 6, 1, pfm);
-	fwrite("\n-1.000000\n", 11, 1, pfm);
-	//fwrite("\n65535\n", 7, 1, pfm);
+	//fwrite("\n-1\n", 4, 1, pfm);
+	//fwrite("\n-1.000000\n", 11, 1, pfm);
+	fwrite("\n65535\n", 7, 1, pfm);
 
-	for (i = 0; i < Y; i++)
-		for (j = 0; j < X; j++)
-		{
-			{
-				hdr_r = sixteento32float(integer_R[i][j]);
-				hdr_g = sixteento32float(integer_G[i][j]);
-				hdr_b = sixteento32float(integer_B[i][j]);
+	for (i = 0; i < Y; i++){
+		for (j = 0; j < X; j++){
+			lsb = integer_R[i][j];
+			msb = integer_R[i][j] >> 8;
+			fwrite(&msb, 1, 1, pfm);
+			fwrite(&lsb, 1, 1, pfm);
 
-				/*int_r = (int) hdr_r;
-				int_g = (int) hdr_g;
-				int_b = (int) hdr_b;
+			lsb = integer_G[i][j];
+			msb = integer_G[i][j] >> 8;
+			fwrite(&msb, 1, 1, pfm);
+			fwrite(&lsb, 1, 1, pfm);
 
-				lsb = int_r;
-				msb = int_r >> 8;
-				fwrite(&msb, 1, 1, pfm);				
-				fwrite(&lsb, 1, 1, pfm);
-
-				lsb = int_g;
-				msb = int_g >> 8;
-				fwrite(&msb, 1, 1, pfm);				
-				fwrite(&lsb, 1, 1, pfm);
-
-				lsb = int_b;
-				msb = int_b >> 8;
-				fwrite(&msb, 1, 1, pfm);				
-				fwrite(&lsb, 1, 1, pfm);*/
-
-				fwrite(&hdr_r, 4, 1, pfm);
-				fwrite(&hdr_g, 4, 1, pfm);
-				fwrite(&hdr_b, 4, 1, pfm);
-
-				/*lsb = integer_R[i][j];
-				msb = integer_R[i][j] >> 8;
-				fwrite(&msb, 1, 1, pfm);				
-				fwrite(&lsb, 1, 1, pfm);
-
-				lsb = integer_G[i][j];
-				msb = integer_G[i][j] >> 8;
-				fwrite(&msb, 1, 1, pfm);				
-				fwrite(&lsb, 1, 1, pfm);
-
-				lsb = integer_B[i][j];
-				msb = integer_B[i][j] >> 8;
-				fwrite(&msb, 1, 1, pfm);				
-				fwrite(&lsb, 1, 1, pfm);*/
-			}
-
+			lsb = integer_B[i][j];
+			msb = integer_B[i][j] >> 8;
+			fwrite(&msb, 1, 1, pfm);
+			fwrite(&lsb, 1, 1, pfm);
 		}
+	}
 	fclose(pfm);
 }
 

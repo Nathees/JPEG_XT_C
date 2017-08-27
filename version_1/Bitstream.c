@@ -10,6 +10,7 @@ int huffcode_DC_identifier[16][2];
 unsigned char huff_size[256];
 
 unsigned char quantization_table[64][4];
+unsigned char resi_quantization_table[64][4];
 
 unsigned char no_of_huff_code_len_i[16];				//Array for store the number of huffman code length of each i
 
@@ -63,7 +64,6 @@ void Baseline_Frame(void){
 		comp_specific_param[i][3] = buffer[count++]; app11_len--;
 	}
 }
-
 void Extended_Frame(void){
 
 }
@@ -118,7 +118,6 @@ void Quantization(){
 	//*********************** identify Pq and Tq and finally add one to no_table due to Pq and Tq each 4 bits*****************************
 	unsigned char Pq,Tq;			// Pq - element precision  Tq - table identifier
 	no_table = 0;
-
 	while (no_table < quanti_tab_len){
 		byte_file = buffer[count++]; app11_len--;
 		Pq = byte_file;
@@ -131,33 +130,30 @@ void Quantization(){
 			remove_00_byte("Error in DQT marker segment");
 
 		//********************************************Adding elements to quantization table no_table*************************************** 
+		/*int Qk = 0;			// quantization element
+		for (Qk = 0; Qk < 64; Qk++){
+			quantization_table[Qk][Tq] = buffer[count++];	app11_len--;		//Add elements to quantization table;
+		}
+		modify_quantization_table(Tq);	*/	//Modify the quantization table based on Feig method for inverse DCT
+
 		int Qk = 0;			// quantization element
 		for (Qk = 0; Qk < 64; Qk++){
 			if(resi_tbox_flag == 0){
 				quantization_table[Qk][Tq] = buffer[count++];	
 			}
 			else {
-				count++;
+				resi_quantization_table[Qk][Tq] = buffer[count++];	
 				app11_len--;		//Add elements to quantization table;
 			}
 		}
 
-		if(resi_tbox_flag == 0){
+		if(resi_tbox_flag == 0)
 			modify_quantization_table(Tq);		//Modify the quantization table based on Feig method for inverse DCT
-		}
+		else
+			modify_resi_quantization_table(Tq);
 
 		no_table = no_table + 64;
 	}
-	/*if(resi_tbox_flag){
-		printf("buffer = %.2X\n",buffer[count++]);
-		printf("buffer = %.2X\n",buffer[count++]);
-		printf("buffer = %.2X\n",buffer[count++]);
-		printf("buffer = %.2X\n",buffer[count++]);
-		printf("buffer = %.2X\n",buffer[count++]);
-		printf("buffer = %.2X\n",buffer[count++]);
-		printf("buffer = %.2X\n",buffer[count++]);
-		getchar();
-	}*/
 }
 
 void Scan(){
@@ -193,8 +189,6 @@ void APP11_process(){
 	app11_len = buffer[count++];
 	app11_len = app11_len << 8;
 	app11_len = app11_len + buffer[count++] - 2;		// subtract 2 for remove the quantization table defination length (16 bit)
-		
-	//	getchar();
 	
 	// SKIP 12 bytes
 	count = count + 15;
@@ -203,11 +197,11 @@ void APP11_process(){
 	switch (buffer[count++]){
 	case 0x45:	tone_mapping_process(); break;
 	case 0x49:	if (resi_tbox_flag) {
-					get_residual_layer_bitstream();
-				}
-				else {
+		get_residual_layer_bitstream();
+		//getchar();
+	}
+				else 
 					resi_tbox_process(); 
-				}
 				break;
 	default:	count = count + app11_len - 1; break;
 	}
@@ -308,6 +302,6 @@ void remove_00_byte(char *error){		// Remove 0x00 byte if exist after the 0xFF b
 	}
 	
 	if (temp != 0x00){
-		//printf("%s\n", error);
+		printf("%s\n", error);
 	}
 }

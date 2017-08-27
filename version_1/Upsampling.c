@@ -288,61 +288,85 @@ void upsampling_cbcr_integer(unsigned char comp){
 	}
 }
 
+
 void color_transform_integer(int x, int y){
 	for (row = 0; row < 8; row++){
 		for (col = 0; col < 8; col++){
-			integer_block_r[row][col] = integer_block_y[row][col] + ((((45941 * (integer_block_cr[row][col] - 128)) >> 14) + 1) >> 1);
-			integer_block_g[row][col] = integer_block_y[row][col] - ((((11277 * (integer_block_cb[row][col] - 128)) >> 14) + 1) >> 1) - ((((23401 * (integer_block_cr[row][col] - 128)) >> 14) + 1) >> 1);
-			integer_block_b[row][col] = integer_block_y[row][col] + ((((58065 * (integer_block_cb[row][col] - 128)) >> 14) + 1) >> 1);
+
+			//integer_block_r[row][col] = integer_block_y[row][col] + ((((45941 * (integer_block_cr[row][col])) >> 14) + 1) >> 1);
+			//integer_block_g[row][col] = integer_block_y[row][col] - ((((11277 * (integer_block_cb[row][col])) >> 14) + 1) >> 1) - ((((23401 * (integer_block_cr[row][col])) >> 14) + 1) >> 1);
+			//integer_block_b[row][col] = integer_block_y[row][col] + ((((58065 * (integer_block_cb[row][col])) >> 14) + 1) >> 1);
+
+
+			integer_block_r[row][col] = ((integer_block_y[row][col] * 8192 + integer_block_cr[row][col] * 11485) + 4096) >> 13;
+            integer_block_g[row][col] = ((integer_block_y[row][col] * 8192 - integer_block_cb[row][col] * 2819 - integer_block_cr[row][col] * 5850) + 4096) >> 13;
+            integer_block_b[row][col] = ((integer_block_y[row][col] * 8192 + integer_block_cb[row][col] * 14516) + 4096) >> 13;
 
 			// R block Clamping
 			if (integer_block_r[row][col] > 255)
 				integer_block_r[row][col] = 255;
-			else if (integer_block_r[row][col] < 0)
-				integer_block_r[row][col] = 0;
-			// G block Clamping
 			if (integer_block_g[row][col] > 255)
 				integer_block_g[row][col] = 255;
-			else if (integer_block_g[row][col] < 0)
-				integer_block_g[row][col] = 0;
-			// B block Clamping
 			if (integer_block_b[row][col] > 255)
 				integer_block_b[row][col] = 255;
-			else if (integer_block_b[row][col] < 0)
-				integer_block_b[row][col] = 0;
-		}
-	}
 
-	// Upload to the blocks to Image
-	for (row = 0; row < 8; row++){
-		for (col = 0; col < 8; col++){
-			integer_R[row + x * 8][col + y * 8] = integer_block_r[row][col];
-			integer_G[row + x * 8][col + y * 8] = integer_block_g[row][col];
-			integer_B[row + x * 8][col + y * 8] = integer_block_b[row][col];
+			if (integer_block_r[row][col] < 0)
+				integer_block_r[row][col] = 0;
+			// G block Clamping
+			if (integer_block_g[row][col] < 0)
+				integer_block_g[row][col] = 0;
+			// B block Clamping
+			if (integer_block_b[row][col] < 0)
+				integer_block_b[row][col] = 0;
 		}
 	}
 }
 
 void tone_mapping(int x, int y){
+	int temp_tone;
+
 	for (row = 0; row < 8; row++){
 		for (col = 0; col < 8; col++){
-				integer_R[row + x * 8][col + y * 8] = tone_table[integer_block_r[row][col]] + resi_y[row + x * 8][col + y * 8];   //  tone_table[
-				integer_G[row + x * 8][col + y * 8] = tone_table[integer_block_g[row][col]] + resi_cb[row + x * 8][col + y * 8];   //  tone_table[
-				integer_B[row + x * 8][col + y * 8] = tone_table[integer_block_b[row][col]] + resi_cr[row + x * 8][col + y * 8];   //  tone_table[
 
-			//fwrite(&integer_block_r[row][col], 1, 1, tone_map);
-			//fwrite(&integer_block_g[row][col], 1, 1, tone_map);
-			//fwrite(&integer_block_b[row][col], 1, 1, tone_map);
+				integer_R[row + x * 8][col + y * 8] = tone_table[integer_block_r[row][col]] + resi_y[row + x * 8][col + y * 8] - 32768;   //  tone_table[
+				integer_G[row + x * 8][col + y * 8] = tone_table[integer_block_g[row][col]] + resi_cb[row + x * 8][col + y * 8] - 32768;   //  tone_table[
+				integer_B[row + x * 8][col + y * 8] = tone_table[integer_block_b[row][col]] + resi_cr[row + x * 8][col + y * 8] - 32768;  //  tone_table[
+			
+				if(integer_R[row + x * 8][col + y * 8] > 65535)
+					integer_R[row + x * 8][col + y * 8] = 65535;
+				if(integer_G[row + x * 8][col + y * 8] > 65535)
+					integer_G[row + x * 8][col + y * 8] = 65535;
+				if(integer_B[row + x * 8][col + y * 8] > 65535)
+					integer_B[row + x * 8][col + y * 8] = 65535;
+
+				if(integer_R[row + x * 8][col + y * 8] < 0)
+					integer_R[row + x * 8][col + y * 8] = 0;
+				if(integer_G[row + x * 8][col + y * 8] < 0)
+					integer_G[row + x * 8][col + y * 8] = 0;
+				if(integer_B[row + x * 8][col + y * 8] < 0)
+					integer_B[row + x * 8][col + y * 8] = 0;	
 		}
 	}
 }
 
 void resi_layer_transfer_element(int x, int y){
+	long long mult1, mult2, mult3, mult4;
 	for (row = 0; row < 8; row++){
 		for (col = 0; col < 8; col++){
-			resi_y[row + x * 8][col + y * 8] = integer_block_y[row][col];
-			resi_cb[row + x * 8][col + y * 8] = integer_block_cb[row][col];
-			resi_cr[row + x * 8][col + y * 8] = integer_block_cr[row][col];
+
+			mult1 = 45941 * integer_block_cr[row][col];
+			mult1 = ((mult1 >> 14) + 1) >> 1;
+			mult2 = 11277 * integer_block_cb[row][col];
+			mult2 = ((mult2 >> 14) + 1) >> 1;
+			mult3 = 23401 * integer_block_cr[row][col];
+			mult3 = ((mult3 >> 14) + 1) >> 1;
+			mult4 = 58065 * integer_block_cb[row][col];
+			mult4 = ((mult4 >> 14) + 1) >> 1;
+
+			resi_y[row + x * 8][col + y * 8] = integer_block_y[row][col] + (int)mult1;
+			resi_cb[row + x * 8][col + y * 8] = integer_block_y[row][col] - (int)mult2 - (int)mult3;  //  - 32768
+			resi_cr[row + x * 8][col + y * 8] = integer_block_y[row][col] + (int)mult4;
+
 		}
 	}
 }

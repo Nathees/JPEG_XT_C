@@ -187,10 +187,25 @@ void DC_Huffman_decode(unsigned char comp, unsigned char table_id, unsigned char
 	case 2: CODE_WORD = CODE_WORD + DIFF_Cr; DIFF_Cr = CODE_WORD; break;
 	default: break;
 	}
-	block[0][0] = CODE_WORD * modified_quantization_table[0][Quantization_table_id]; // modified_quantization_table[0][Quantization_table_id] *  dequantization with Feig implementation for IDCT
-	//block_temp[0][0] = quantization_table[0][Quantization_table_id] * CODE_WORD;
-	integer_block[0][0] = ((CODE_WORD *integer_modified_quantization_table[0][Quantization_table_id] >> 6) + 1) >> 1;
+
+	// Integer Operation
+	if (resi_tbox_flag)
+		integer_block[0][0] = ((CODE_WORD *integer_modified_resi_quantization_table[0][Quantization_table_id] >> 6) + 1) >> 1;
+	else
+		integer_block[0][0] = ((CODE_WORD *integer_modified_quantization_table[0][Quantization_table_id] >> 6) + 1) >> 1;
+
+	// Float Operation
+	/*if (resi_tbox_flag)
+		block[0][0] = resi_quantization_table[0][Quantization_table_id] * CODE_WORD;
+	else
+		block[0][0] = quantization_table[0][Quantization_table_id] * CODE_WORD;*/
+
+
+	//block[0][0] = CODE_WORD * modified_quantization_table[0][Quantization_table_id]; // modified_quantization_table[0][Quantization_table_id] *  dequantization with Feig implementation for IDCT
 	//integer_block[0][0] = CODE_WORD *integer_modified_quantization_table[0][Quantization_table_id];
+
+	//integer_block[0][0] = integer_block[0][0] + 128;
+	//integer_block[0][0] = CODE_WORD;
 }
 
 void AC_Huffman_decode(unsigned char table_id, unsigned char Quantization_table_id){
@@ -216,10 +231,23 @@ void AC_Huffman_decode(unsigned char table_id, unsigned char Quantization_table_
 
 		row = Zig_Zag[J] & 0xF;
 		col = Zig_Zag[J] >> 4;
-		block[row][col] = CODE_WORD * modified_quantization_table[J][Quantization_table_id]; // modified_quantization_table[J][Quantization_table_id] *  dequantization with Feig implementation for IDCT
-		//block_temp[row][col] = quantization_table[J][Quantization_table_id] * CODE_WORD;
-		integer_block[row][col] = ((CODE_WORD *integer_modified_quantization_table[J][Quantization_table_id] >> 6) + 1) >> 1;
+
+		// Integer Operation
+		if (resi_tbox_flag)
+			integer_block[row][col] = ((CODE_WORD *integer_modified_resi_quantization_table[J][Quantization_table_id] >> 6) + 1) >> 1;
+		else
+			integer_block[row][col] = ((CODE_WORD *integer_modified_quantization_table[J][Quantization_table_id] >> 6) + 1) >> 1;
+
+		// Float Operation
+		/*if (resi_tbox_flag)
+			block[row][col] = resi_quantization_table[J][Quantization_table_id] * CODE_WORD;
+		else
+			block[row][col] = quantization_table[J][Quantization_table_id] * CODE_WORD;*/
+
+		//block[row][col] = CODE_WORD * modified_quantization_table[J][Quantization_table_id]; // modified_quantization_table[J][Quantization_table_id] *  dequantization with Feig implementation for IDCT
 		//integer_block[row][col] = CODE_WORD *integer_modified_quantization_table[J][Quantization_table_id];
+
+		//integer_block[row][col] = CODE_WORD;
 	}
 }
 
